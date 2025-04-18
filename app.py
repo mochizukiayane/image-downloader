@@ -9,7 +9,7 @@ from urllib.parse import urljoin, urlparse
 st.set_page_config(page_title="Image Downloader", layout="wide")
 
 # -------------------------------------------
-# CSS（スマホ対応＋見た目整形＋行高さ揃え）
+# CSSカスタマイズ（アクタガワHRM風＋スマホ対応）
 # -------------------------------------------
 st.markdown("""
     <style>
@@ -25,26 +25,12 @@ st.markdown("""
             border-radius: 6px;
             padding: 10px 20px;
             font-size: 16px;
-            width: 100%;
         }
         .stButton > button:hover {
             background-color: #005a94;
         }
         h1, h2, h3 {
             color: #003366;
-        }
-        /* カードコンテナ */
-        .image-card {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 280px;
-            padding-bottom: 8px;
-        }
-        .image-card img {
-            max-height: 180px;
-            object-fit: cover;
-            width: 100%;
         }
         @media screen and (max-width: 768px) {
             .block-container {
@@ -66,7 +52,7 @@ st.markdown("""
 """)
 
 # -------------------------------------------
-# メイン処理：画像取得＆表示
+# URL入力・画像取得・表示＆ダウンロード
 # -------------------------------------------
 url = st.text_input("画像を取得したいWebページのURLを入力してください（http/https）:")
 
@@ -94,23 +80,17 @@ if url:
             else:
                 st.success(f"{len(img_urls)}件の画像を見つけました。")
                 cols = st.columns(2 if st.session_state.get('mobile') else 4)
-
                 for idx, img_url in enumerate(img_urls):
                     col = cols[idx % len(cols)]
-                    with col:
-                        try:
-                            img_resp = requests.get(img_url)
-                            img_resp.raise_for_status()
-                            img_bytes = img_resp.content
-                            ext = img_url.split('.')[-1].split('?')[0]
-                            filename = f"image_{idx+1}.{ext}" if ext else f"image_{idx+1}"
-
-                            with st.container():
-                                st.markdown('<div class="image-card">', unsafe_allow_html=True)
-                                st.image(img_bytes, use_container_width=True)
-                                st.download_button(label="保存", data=img_bytes, file_name=filename, mime="image/*")
-                                st.markdown('</div>', unsafe_allow_html=True)
-                        except Exception as e:
-                            col.write(f"読み込み失敗: {e}")
+                    try:
+                        img_resp = requests.get(img_url)
+                        img_resp.raise_for_status()
+                        img_bytes = img_resp.content
+                        ext = img_url.split('.')[-1].split('?')[0]
+                        filename = f"image_{idx+1}.{ext}" if ext else f"image_{idx+1}"
+                        col.image(img_bytes, use_container_width=True)  # ←ここを修正済！
+                        col.download_button(label="保存", data=img_bytes, file_name=filename, mime="image/*")
+                    except Exception as e:
+                        col.write(f"読み込み失敗: {e}")
         except Exception as e:
             st.error(f"ページ取得エラー: {e}")
